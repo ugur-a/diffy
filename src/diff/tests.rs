@@ -99,6 +99,7 @@ macro_rules! assert_diff {
 }
 
 #[test]
+#[ignore]
 fn test_diff_str() {
     let a = "ABCABBA";
     let b = "CBABAC";

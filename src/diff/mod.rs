@@ -6,6 +6,7 @@ use crate::{
 use std::{cmp, ops};
 
 mod cleanup;
+mod histogram;
 mod myers;
 
 #[cfg(test)]
@@ -41,11 +42,18 @@ where
     }
 }
 
+#[derive(Debug)]
+enum Algorithm {
+    Myers,
+    Histogram,
+}
+
 /// A collection of options for modifying the way a diff is performed
 #[derive(Debug)]
 pub struct DiffOptions {
     compact: bool,
     context_len: usize,
+    algorithm: Algorithm,
 }
 
 impl DiffOptions {
@@ -57,6 +65,7 @@ impl DiffOptions {
         Self {
             compact: true,
             context_len: 3,
+            algorithm: Algorithm::Histogram,
         }
     }
 
@@ -79,12 +88,18 @@ impl DiffOptions {
     // TODO determine if this should be exposed in the public API
     #[allow(dead_code)]
     fn diff<'a>(&self, original: &'a str, modified: &'a str) -> Vec<Diff<'a, str>> {
-        let solution = myers::diff(original.as_bytes(), modified.as_bytes());
+        let mut solution = match self.algorithm {
+            Algorithm::Myers => {
+                let solution = myers::diff(original.as_bytes(), modified.as_bytes());
 
-        let mut solution = solution
-            .into_iter()
-            .map(|diff_range| diff_range.to_str(original, modified))
-            .collect();
+                let solution = solution
+                    .into_iter()
+                    .map(|diff_range| diff_range.to_str(original, modified))
+                    .collect();
+                solution
+            }
+            Algorithm::Histogram => histogram::diff(original, modified),
+        };
 
         if self.compact {
             cleanup::compact(&mut solution);

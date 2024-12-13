@@ -444,23 +444,16 @@ fn create_merge_range<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike>(
     theirs: Option<Range<'theirs, T>>,
 ) -> Option<MergeRange<'ancestor, 'ours, 'theirs, T>> {
     match (ancestor, ours, theirs) {
-        (Some(ancestor), Some(ours), Some(theirs)) => {
-            Some(MergeRange::Conflict(ancestor, ours, theirs))
-        }
-        (None, Some(ours), Some(theirs)) => {
-            Some(MergeRange::Conflict(Range::empty(), ours, theirs))
-        }
+        (_, None, None) => None,
+
         (None, Some(ours), None) => Some(MergeRange::Ours(ours)),
         (None, None, Some(theirs)) => Some(MergeRange::Theirs(theirs)),
 
-        (Some(ancestor), None, Some(theirs)) => {
-            Some(MergeRange::Conflict(ancestor, Range::empty(), theirs))
-        }
-        (Some(ancestor), Some(ours), None) => {
-            Some(MergeRange::Conflict(ancestor, ours, Range::empty()))
-        }
-
-        (Some(_), None, None) | (None, None, None) => None,
+        (ancestor, ours, theirs) => Some(MergeRange::Conflict(
+            ancestor.unwrap_or(Range::empty()),
+            ours.unwrap_or(Range::empty()),
+            theirs.unwrap_or(Range::empty()),
+        )),
     }
 }
 

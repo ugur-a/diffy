@@ -44,3 +44,9 @@ pub fn diff<'a, 'b>(old: &'a str, new: &'b str) -> Vec<DiffRange<'a, 'b, str>> {
 
     diff_ranges
 }
+
+mod diffy_diff_range;
+mod intern;
+
+pub(crate) use diffy_diff_range::DiffyDiffRangeBuilder;
+pub(crate) use intern::InternedMergeInput;

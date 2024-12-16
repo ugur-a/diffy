@@ -6,7 +6,7 @@ use crate::{
 use std::{cmp, ops};
 
 mod cleanup;
-mod histogram;
+pub(crate) mod histogram;
 mod myers;
 
 #[cfg(test)]
@@ -43,7 +43,7 @@ where
 }
 
 #[derive(Debug)]
-enum Algorithm {
+pub(crate) enum Algorithm {
     Myers,
     Histogram,
 }
@@ -53,7 +53,7 @@ enum Algorithm {
 pub struct DiffOptions {
     compact: bool,
     context_len: usize,
-    algorithm: Algorithm,
+    pub(crate) algorithm: Algorithm,
 }
 
 impl DiffOptions {

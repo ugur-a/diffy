@@ -1,7 +1,13 @@
+use imara_diff::Algorithm;
+
 use crate::{
-    diff::DiffOptions,
+    diff::{
+        self,
+        histogram::{DiffyDiffRangeBuilder, InternedMergeInput},
+        DiffOptions,
+    },
     range::{DiffRange, Range, SliceLike},
-    utils::Classifier,
+    utils::{Classifier, LineIter},
 };
 use std::{cmp, fmt};
 
@@ -151,28 +157,72 @@ impl MergeOptions {
         ours: &'a str,
         theirs: &'a str,
     ) -> Result<String, String> {
-        let mut classifier = Classifier::default();
-        let (ancestor_lines, ancestor_ids) = classifier.classify_lines(ancestor);
-        let (our_lines, our_ids) = classifier.classify_lines(ours);
-        let (their_lines, their_ids) = classifier.classify_lines(theirs);
-
         let opts = DiffOptions::default();
-        let our_solution = opts.diff_slice(&ancestor_ids, &our_ids);
-        let their_solution = opts.diff_slice(&ancestor_ids, &their_ids);
+        match opts.algorithm {
+            diff::Algorithm::Myers => {
+                let mut classifier = Classifier::default();
+                let (ancestor_lines, ancestor_ids) = classifier.classify_lines(ancestor);
+                let (our_lines, our_ids) = classifier.classify_lines(ours);
+                let (their_lines, their_ids) = classifier.classify_lines(theirs);
 
-        let merged = merge_solutions(&our_solution, &their_solution);
-        let mut merge = diff3_range_to_merge_range(&merged);
+                let our_solution = opts.diff_slice(&ancestor_ids, &our_ids);
+                let their_solution = opts.diff_slice(&ancestor_ids, &their_ids);
 
-        cleanup_conflicts(&mut merge);
+                let merged = merge_solutions(&our_solution, &their_solution);
+                let mut merge = diff3_range_to_merge_range(&merged);
 
-        output_result(
-            &ancestor_lines,
-            &our_lines,
-            &their_lines,
-            &merge,
-            self.conflict_marker_length,
-            self.style,
-        )
+                cleanup_conflicts(&mut merge);
+
+                output_result(
+                    &ancestor_lines,
+                    &our_lines,
+                    &their_lines,
+                    &merge,
+                    self.conflict_marker_length,
+                    self.style,
+                )
+            }
+            diff::Algorithm::Histogram => {
+                let algorithm = Algorithm::Histogram;
+
+                let ancestor_lines: Vec<_> = LineIter::new(ancestor).collect();
+                let our_lines: Vec<_> = LineIter::new(ours).collect();
+                let their_lines: Vec<_> = LineIter::new(theirs).collect();
+
+                let input = InternedMergeInput::new(ancestor, ours, theirs);
+
+                let our_solution = imara_diff::diff_with_tokens(
+                    algorithm,
+                    &input.base,
+                    &input.left,
+                    input.interner.num_tokens(),
+                    DiffyDiffRangeBuilder::new(&input.base, &input.left),
+                );
+
+                let their_solution = imara_diff::diff_with_tokens(
+                    algorithm,
+                    &input.base,
+                    &input.right,
+                    input.interner.num_tokens(),
+                    DiffyDiffRangeBuilder::new(&input.base, &input.right),
+                );
+
+                let merged = merge_solutions(&our_solution, &their_solution);
+
+                let mut merge = diff3_range_to_merge_range(&merged);
+
+                cleanup_conflicts(&mut merge);
+
+                output_result(
+                    &ancestor_lines,
+                    &our_lines,
+                    &their_lines,
+                    &merge,
+                    self.conflict_marker_length,
+                    self.style,
+                )
+            }
+        }
     }
 
     /// Perform a 3-way merge between potentially non-utf8 texts

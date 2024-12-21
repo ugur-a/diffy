@@ -1,43 +1,79 @@
 //! Common utilities
 
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    hash::Hash,
-};
+use std::hash::Hash;
 
-/// Classifies lines, converting lines into unique `u64`s for quicker comparison
-pub struct Classifier<'a, T: ?Sized> {
-    next_id: u64,
-    unique_ids: HashMap<&'a T, u64>,
+use imara_diff::intern::{Interner, Token, TokenSource};
+
+// TODO: remove the trait bounds on new release of imara-diff
+//
+/// Similar to `InternedInput`, but takes 3 files instead of 2
+#[derive(Default)]
+pub struct InternedMergeInput<T: Eq + Hash> {
+    /// The base revision, aka. "ancestor"
+    pub base: Vec<Token>,
+    /// The left revision, aka. "ours"
+    pub left: Vec<Token>,
+    /// The right revision, aka. "theirs"
+    pub right: Vec<Token>,
+    pub interner: Interner<T>,
 }
 
-impl<'a, T: ?Sized + Eq + Hash> Classifier<'a, T> {
-    fn classify(&mut self, record: &'a T) -> u64 {
-        match self.unique_ids.entry(record) {
-            Entry::Occupied(o) => *o.get(),
-            Entry::Vacant(v) => {
-                let id = self.next_id;
-                self.next_id += 1;
-                *v.insert(id)
-            }
-        }
+impl<T: Eq + Hash> InternedMergeInput<T> {
+    pub fn new<I: TokenSource<Token = T>>(base: I, left: I, right: I) -> Self {
+        let token_estimate_base = base.estimate_tokens() as usize;
+        let token_estimate_left = left.estimate_tokens() as usize;
+        let token_estimate_right = right.estimate_tokens() as usize;
+        let mut res = Self {
+            base: Vec::with_capacity(token_estimate_base),
+            left: Vec::with_capacity(token_estimate_left),
+            right: Vec::with_capacity(token_estimate_right),
+            interner: Interner::new(
+                token_estimate_base + token_estimate_left + token_estimate_right,
+            ),
+        };
+        res.update_base(base.tokenize());
+        res.update_left(left.tokenize());
+        res.update_right(right.tokenize());
+        res
     }
-}
 
-impl<'a, T: ?Sized + Text> Classifier<'a, T> {
-    pub fn classify_lines(&mut self, text: &'a T) -> (Vec<&'a T>, Vec<u64>) {
-        LineIter::new(text)
-            .map(|line| (line, self.classify(line)))
-            .unzip()
+    /// replaces `self.base` wtih the iterned Tokens yielded by `input`
+    /// Note that this does not erase any tokens from the interner and might therefore be considered
+    /// a memory leak. If this function is called often over a long-running process
+    /// consider clearing the interner with [`clear`](crate::intern::InternedMergeInput::clear).
+    pub fn update_base(&mut self, input: impl Iterator<Item = T>) {
+        self.base.clear();
+        self.base
+            .extend(input.map(|token| self.interner.intern(token)));
     }
-}
 
-impl<T: Eq + Hash + ?Sized> Default for Classifier<'_, T> {
-    fn default() -> Self {
-        Self {
-            next_id: 0,
-            unique_ids: HashMap::default(),
-        }
+    /// replaces `self.left` wtih the iterned Tokens yielded by `input`
+    /// Note that this does not erase any tokens from the interner and might therefore be considered
+    /// a memory leak. If this function is called often over a long-running process
+    /// consider clearing the interner with [`clear`](crate::intern::InternedMergeInput::clear) or
+    /// [`erase_tokens_after`](https://docs.rs/imara-diff/latest/imara_diff/intern/struct.Interner.html#method.erase_tokens_after).
+    pub fn update_left(&mut self, input: impl Iterator<Item = T>) {
+        self.left.clear();
+        self.left
+            .extend(input.map(|token| self.interner.intern(token)));
+    }
+
+    /// replaces `self.right` wtih the iterned Tokens yielded by `input`
+    /// Note that this does not erase any tokens from the interner and might therefore be considered
+    /// a memory leak. If this function is called often over a long-running process
+    /// consider clearing the interner with [`clear`](crate::intern::InternedMergeInput::clear) or
+    /// [`erase_tokens_after`](https://docs.rs/imara-diff/latest/imara_diff/intern/struct.Interner.html#method.erase_tokens_after).
+    pub fn update_right(&mut self, input: impl Iterator<Item = T>) {
+        self.right.clear();
+        self.right
+            .extend(input.map(|token| self.interner.intern(token)));
+    }
+
+    pub fn clear(&mut self) {
+        self.base.clear();
+        self.left.clear();
+        self.right.clear();
+        self.interner.clear();
     }
 }
 

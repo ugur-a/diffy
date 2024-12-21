@@ -1,7 +1,11 @@
+use imara_diff::{
+    intern::{InternedInput, Token},
+    sources::{byte_lines_with_terminator, lines_with_terminator},
+};
+
 use crate::{
     patch::{Hunk, HunkRange, Line, Patch},
     range::{DiffRange, SliceLike},
-    utils::Classifier,
 };
 use std::{cmp, ops};
 
@@ -95,11 +99,13 @@ impl DiffOptions {
 
     /// Produce a Patch between two texts based on the configured options
     pub fn create_patch<'a>(&self, original: &'a str, modified: &'a str) -> Patch<'a, str> {
-        let mut classifier = Classifier::default();
-        let (old_lines, old_ids) = classifier.classify_lines(original);
-        let (new_lines, new_ids) = classifier.classify_lines(modified);
+        let original = lines_with_terminator(original);
+        let modified = lines_with_terminator(modified);
+        let input = InternedInput::new(original, modified);
+        let old_lines: Vec<_> = original.collect();
+        let new_lines: Vec<_> = modified.collect();
 
-        let solution = self.diff_slice(&old_ids, &new_ids);
+        let solution = self.diff_slice(&input.before, &input.after);
 
         let hunks = to_hunks(&old_lines, &new_lines, &solution, self.context_len);
         Patch::new(Some("original"), Some("modified"), hunks)
@@ -111,11 +117,11 @@ impl DiffOptions {
         original: &'a [u8],
         modified: &'a [u8],
     ) -> Patch<'a, [u8]> {
-        let mut classifier = Classifier::default();
-        let (old_lines, old_ids) = classifier.classify_lines(original);
-        let (new_lines, new_ids) = classifier.classify_lines(modified);
+        let old_lines: Vec<_> = byte_lines_with_terminator(original).collect();
+        let new_lines: Vec<_> = byte_lines_with_terminator(modified).collect();
+        let input = InternedInput::new(original, modified);
 
-        let solution = self.diff_slice(&old_ids, &new_ids);
+        let solution = self.diff_slice(&input.before, &input.after);
 
         let hunks = to_hunks(&old_lines, &new_lines, &solution, self.context_len);
         Patch::new(Some(&b"original"[..]), Some(&b"modified"[..]), hunks)
@@ -193,7 +199,7 @@ pub fn create_patch_bytes<'a>(original: &'a [u8], modified: &'a [u8]) -> Patch<'
 fn to_hunks<'a, T: ?Sized>(
     lines1: &[&'a T],
     lines2: &[&'a T],
-    solution: &[DiffRange<[u64]>],
+    solution: &[DiffRange<[Token]>],
     context_len: usize,
 ) -> Vec<Hunk<'a, T>> {
     let edit_script = build_edit_script(solution);

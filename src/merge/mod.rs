@@ -1,7 +1,9 @@
+use imara_diff::sources::{byte_lines_with_terminator, lines_with_terminator};
+
 use crate::{
     diff::DiffOptions,
     range::{DiffRange, Range, SliceLike},
-    utils::Classifier,
+    utils::InternedMergeInput,
 };
 use std::{cmp, fmt};
 
@@ -151,14 +153,18 @@ impl MergeOptions {
         ours: &'a str,
         theirs: &'a str,
     ) -> Result<String, String> {
-        let mut classifier = Classifier::default();
-        let (ancestor_lines, ancestor_ids) = classifier.classify_lines(ancestor);
-        let (our_lines, our_ids) = classifier.classify_lines(ours);
-        let (their_lines, their_ids) = classifier.classify_lines(theirs);
+        let ancestor = lines_with_terminator(ancestor);
+        let ours = lines_with_terminator(ours);
+        let theirs = lines_with_terminator(theirs);
+        let input = InternedMergeInput::new(ancestor, ours, theirs);
+
+        let ancestor_lines: Vec<_> = ancestor.collect();
+        let our_lines: Vec<_> = ours.collect();
+        let their_lines: Vec<_> = theirs.collect();
 
         let opts = DiffOptions::default();
-        let our_solution = opts.diff_slice(&ancestor_ids, &our_ids);
-        let their_solution = opts.diff_slice(&ancestor_ids, &their_ids);
+        let our_solution = opts.diff_slice(&input.base, &input.left);
+        let their_solution = opts.diff_slice(&input.base, &input.right);
 
         let merged = merge_solutions(&our_solution, &their_solution);
         let mut merge = diff3_range_to_merge_range(&merged);
@@ -182,14 +188,18 @@ impl MergeOptions {
         ours: &'a [u8],
         theirs: &'a [u8],
     ) -> Result<Vec<u8>, Vec<u8>> {
-        let mut classifier = Classifier::default();
-        let (ancestor_lines, ancestor_ids) = classifier.classify_lines(ancestor);
-        let (our_lines, our_ids) = classifier.classify_lines(ours);
-        let (their_lines, their_ids) = classifier.classify_lines(theirs);
+        let ancestor = byte_lines_with_terminator(ancestor);
+        let ours = byte_lines_with_terminator(ours);
+        let theirs = byte_lines_with_terminator(theirs);
+        let input = InternedMergeInput::new(ancestor, ours, theirs);
+
+        let ancestor_lines: Vec<_> = ancestor.collect();
+        let our_lines: Vec<_> = ours.collect();
+        let their_lines: Vec<_> = theirs.collect();
 
         let opts = DiffOptions::default();
-        let our_solution = opts.diff_slice(&ancestor_ids, &our_ids);
-        let their_solution = opts.diff_slice(&ancestor_ids, &their_ids);
+        let our_solution = opts.diff_slice(&input.base, &input.left);
+        let their_solution = opts.diff_slice(&input.base, &input.right);
 
         let merged = merge_solutions(&our_solution, &their_solution);
         let mut merge = diff3_range_to_merge_range(&merged);

@@ -13,4 +13,5 @@ rust-version = "1.62.1"
 edition = "2021"
 
 [dependencies]
+imara-diff = "0.1.7"
 nu-ansi-term = "0.50"

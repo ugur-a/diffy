@@ -7,18 +7,18 @@ use imara_diff::{
 
 use crate::range::{DiffRange, Range};
 
-pub(crate) struct DiffyDiffRangeBuilder<'a, T> {
-    before: &'a [T],
-    after: &'a [T],
+pub(crate) struct DiffyDiffRangeBuilder<'a> {
+    before: &'a [Token],
+    after: &'a [Token],
 
     prev_before_end: usize,
     prev_after_end: usize,
 
-    dst: Vec<DiffRange<'a, 'a, [T]>>,
+    dst: Vec<DiffRange<'a, 'a, [Token]>>,
 }
 
-impl<'a, T> DiffyDiffRangeBuilder<'a, T> {
-    pub fn from_tokens(before: &'a [T], after: &'a [T]) -> Self {
+impl<'a> DiffyDiffRangeBuilder<'a> {
+    pub fn from_tokens(before: &'a [Token], after: &'a [Token]) -> Self {
         Self {
             before,
             after,
@@ -28,9 +28,7 @@ impl<'a, T> DiffyDiffRangeBuilder<'a, T> {
             dst: vec![],
         }
     }
-}
 
-impl<'a> DiffyDiffRangeBuilder<'a, Token> {
     pub fn new<T: Eq + Hash>(input: &'a InternedInput<T>) -> Self {
         Self {
             before: &input.before,
@@ -43,8 +41,8 @@ impl<'a> DiffyDiffRangeBuilder<'a, Token> {
     }
 }
 
-impl<'a, T: Eq + Hash> Sink for DiffyDiffRangeBuilder<'a, T> {
-    type Out = Vec<DiffRange<'a, 'a, [T]>>;
+impl<'a> Sink for DiffyDiffRangeBuilder<'a> {
+    type Out = Vec<DiffRange<'a, 'a, [Token]>>;
 
     fn process_change(&mut self, before: ops::Range<u32>, after: ops::Range<u32>) {
         let before = before.start as usize..before.end as usize;
@@ -106,7 +104,7 @@ mod test {
             &input.before,
             &input.after,
             input.interner.num_tokens(),
-            DiffyDiffRangeBuilder::from_tokens(&input.before, &input.after),
+            DiffyDiffRangeBuilder::new(&input),
         );
 
         assert_eq!(
@@ -136,7 +134,7 @@ mod test {
             &input.before,
             &input.after,
             input.interner.num_tokens(),
-            DiffyDiffRangeBuilder::from_tokens(&input.before, &input.after),
+            DiffyDiffRangeBuilder::new(&input),
         );
 
         assert_eq!(
@@ -171,7 +169,7 @@ mod test {
             &input.before,
             &input.after,
             input.interner.num_tokens(),
-            DiffyDiffRangeBuilder::from_tokens(&input.before, &input.after),
+            DiffyDiffRangeBuilder::new(&input),
         );
 
         assert_eq!(
@@ -202,7 +200,7 @@ mod test {
             &input.before,
             &input.after,
             input.interner.num_tokens(),
-            DiffyDiffRangeBuilder::from_tokens(&input.before, &input.after),
+            DiffyDiffRangeBuilder::new(&input),
         );
 
         assert_eq!(
@@ -228,7 +226,7 @@ mod test {
             &input.before,
             &input.after,
             input.interner.num_tokens(),
-            DiffyDiffRangeBuilder::from_tokens(&input.before, &input.after),
+            DiffyDiffRangeBuilder::new(&input),
         );
 
         assert_eq!(
@@ -248,7 +246,7 @@ mod test {
             &input.before,
             &input.after,
             input.interner.num_tokens(),
-            DiffyDiffRangeBuilder::from_tokens(&input.before, &input.after),
+            DiffyDiffRangeBuilder::new(&input),
         );
 
         assert_eq!(
@@ -268,7 +266,7 @@ mod test {
             &input.before,
             &input.after,
             input.interner.num_tokens(),
-            DiffyDiffRangeBuilder::from_tokens(&input.before, &input.after),
+            DiffyDiffRangeBuilder::new(&input),
         );
 
         assert_eq!(&diff, &[]);

@@ -48,8 +48,12 @@ where
 /// A collection of options for modifying the way a diff is performed
 #[derive(Debug)]
 pub struct DiffOptions {
-    compact: bool,
-    context_len: usize,
+    /// Diff compaction, a post-processing step which attempts to
+    /// produce a prettier diff by reducing the number of edited blocks by shifting and merging
+    /// edit blocks.
+    pub compact: bool,
+    /// Set the number of context lines that should be used when producing a patch
+    pub context_len: usize,
 }
 
 impl DiffOptions {
@@ -62,22 +66,6 @@ impl DiffOptions {
             compact: true,
             context_len: 3,
         }
-    }
-
-    /// Set the number of context lines that should be used when producing a patch
-    pub fn set_context_len(&mut self, context_len: usize) -> &mut Self {
-        self.context_len = context_len;
-        self
-    }
-
-    /// Enable/Disable diff compaction. Compaction is a post-processing step which attempts to
-    /// produce a prettier diff by reducing the number of edited blocks by shifting and merging
-    /// edit blocks.
-    // TODO determine if this should be exposed in the public API
-    #[allow(dead_code)]
-    fn set_compact(&mut self, compact: bool) -> &mut Self {
-        self.compact = compact;
-        self
     }
 
     // TODO determine if this should be exposed in the public API

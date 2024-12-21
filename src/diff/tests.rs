@@ -441,7 +441,7 @@ The door of all subtleties!
 +Deeper and more profound,
 +The door of all subtleties!
 ";
-    opts.set_context_len(0);
+    opts.context_len = 0;
     assert_patch!(opts, lao, tzu, expected);
 
     let expected = "\
@@ -461,7 +461,7 @@ The door of all subtleties!
 +Deeper and more profound,
 +The door of all subtleties!
 ";
-    opts.set_context_len(1);
+    opts.context_len = 1;
     assert_patch!(opts, lao, tzu, expected);
 }
 

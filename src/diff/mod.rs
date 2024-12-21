@@ -338,8 +338,8 @@ fn build_edit_script<T>(solution: &[DiffRange<[T]>]) -> Vec<EditRange> {
                 }
             }
             DiffRange::Delete(range) => {
-                match &mut script {
-                    Some(s) => s.old.end += range.len(),
+                match script {
+                    Some(ref mut s) => s.old.end += range.len(),
                     None => {
                         script = Some(EditRange::new(idx_a..idx_a + range.len(), idx_b..idx_b));
                     }
@@ -347,8 +347,8 @@ fn build_edit_script<T>(solution: &[DiffRange<[T]>]) -> Vec<EditRange> {
                 idx_a += range.len();
             }
             DiffRange::Insert(range) => {
-                match &mut script {
-                    Some(s) => s.new.end += range.len(),
+                match script {
+                    Some(ref mut s) => s.new.end += range.len(),
                     None => {
                         script = Some(EditRange::new(idx_a..idx_a, idx_b..idx_b + range.len()));
                     }

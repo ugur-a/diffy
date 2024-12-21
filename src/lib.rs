@@ -217,6 +217,7 @@ mod diff;
 mod merge;
 mod patch;
 mod range;
+mod sink;
 mod utils;
 
 pub use apply::{apply, apply_bytes, ApplyError};

@@ -1,7 +1,7 @@
 use std::{cmp, fmt::Debug, ops};
 
 // Range type inspired by the Range type used in [dissimilar](https://docs.rs/dissimilar)
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Range<'a, T: ?Sized> {
     inner: &'a T,
     offset: usize,
@@ -344,7 +344,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum DiffRange<'a, 'b, T: ?Sized> {
     Equal(Range<'a, T>, Range<'b, T>),
     Delete(Range<'a, T>),

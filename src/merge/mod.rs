@@ -120,8 +120,10 @@ pub enum ConflictStyle {
 /// A collection of options for modifying the way a merge is performed
 #[derive(Debug)]
 pub struct MergeOptions {
-    conflict_marker_length: usize,
-    style: ConflictStyle,
+    /// The length of the conflict markers used when displaying a merge conflict
+    pub conflict_marker_length: usize,
+    /// The conflict style used when displaying a merge conflict
+    pub style: ConflictStyle,
     algorithm: Algorithm,
 }
 
@@ -137,18 +139,6 @@ impl MergeOptions {
             style: ConflictStyle::Diff3,
             algorithm: Algorithm::Histogram,
         }
-    }
-
-    /// Set the length of the conflict markers used when displaying a merge conflict
-    pub fn set_conflict_marker_length(&mut self, conflict_marker_length: usize) -> &mut Self {
-        self.conflict_marker_length = conflict_marker_length;
-        self
-    }
-
-    /// Set the conflict style used when displaying a merge conflict
-    pub fn set_conflict_style(&mut self, style: ConflictStyle) -> &mut Self {
-        self.style = style;
-        self
     }
 
     /// Merge two files, given a common ancestor, based on the configured options

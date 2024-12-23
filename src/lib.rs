@@ -8,7 +8,8 @@
 //! communicate differences between two versions of a file using a `diff` or
 //! `patch`.
 //!
-//! The current diff implementation is based on the [Myers' diff algorithm].
+//! The library uses [`imara-diff`]'s implementations of Myers diff and histogram diff under the
+//! hood.
 //!
 //! ## UTF-8 and Non-UTF-8
 //!

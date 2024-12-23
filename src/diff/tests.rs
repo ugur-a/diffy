@@ -170,22 +170,6 @@ fn test_diff_str() {
 }
 
 #[test]
-fn test_diff_slice() {
-    let a = b"bat";
-    let b = b"map";
-    let solution = DiffOptions::default().diff_slice(a, b);
-    let solution: Vec<_> = solution.into_iter().map(Diff::from).collect();
-    let expected: Vec<Diff<[u8]>> = vec![
-        Diff::Delete(b"b"),
-        Diff::Insert(b"m"),
-        Diff::Equal(b"a"),
-        Diff::Delete(b"t"),
-        Diff::Insert(b"p"),
-    ];
-    assert_eq!(solution, expected);
-}
-
-#[test]
 fn test_unicode() {
     // Unicode snowman and unicode comet have the same first two bytes. A
     // byte-based diff would produce a 2-byte Equal followed by 1-byte Delete

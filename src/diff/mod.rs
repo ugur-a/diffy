@@ -7,8 +7,9 @@ use imara_diff::{
 use crate::{
     patch::{Hunk, HunkRange, Line, Patch},
     range::{DiffRange, SliceLike},
+    sink::DiffyDiffRangeBuilder,
 };
-use std::{cmp, ops};
+use std::{cmp, hash::Hash, ops};
 
 mod cleanup;
 mod myers;
@@ -96,7 +97,7 @@ impl DiffOptions {
         let old_lines: Vec<_> = original.collect();
         let new_lines: Vec<_> = modified.collect();
 
-        let solution = self.diff_slice(&input.before, &input.after);
+        let solution = self.diff_interned(&input);
 
         let hunks = to_hunks(&old_lines, &new_lines, &solution, self.context_len);
         Patch::new(Some("original"), Some("modified"), hunks)
@@ -112,24 +113,28 @@ impl DiffOptions {
         let new_lines: Vec<_> = byte_lines_with_terminator(modified).collect();
         let input = InternedInput::new(original, modified);
 
-        let solution = self.diff_slice(&input.before, &input.after);
+        let solution = self.diff_interned(&input);
 
         let hunks = to_hunks(&old_lines, &new_lines, &solution, self.context_len);
         Patch::new(Some(&b"original"[..]), Some(&b"modified"[..]), hunks)
     }
 
-    pub(crate) fn diff_slice<'a, T: PartialEq>(
+    pub(crate) fn diff_interned<'a, T: Eq + Hash>(
         &self,
-        old: &'a [T],
-        new: &'a [T],
-    ) -> Vec<DiffRange<'a, 'a, [T]>> {
-        let mut solution = myers::diff(old, new);
+        input: &'a InternedInput<T>,
+    ) -> Vec<DiffRange<'a, 'a, [Token]>> {
+        self.diff_tokens(&input.before, &input.after, input.interner.num_tokens())
+    }
 
-        if self.compact {
-            cleanup::compact(&mut solution);
-        }
+    pub(crate) fn diff_tokens<'a>(
+        &self,
+        before: &'a [Token],
+        after: &'a [Token],
+        num_tokens: u32,
+    ) -> Vec<DiffRange<'a, 'a, [Token]>> {
+        let sink = DiffyDiffRangeBuilder::from_tokens(before, after);
 
-        solution
+        imara_diff::diff_with_tokens(self.algorithm, before, after, num_tokens, sink)
     }
 }
 

@@ -157,9 +157,14 @@ impl MergeOptions {
         let our_lines: Vec<_> = ours.collect();
         let their_lines: Vec<_> = theirs.collect();
 
-        let opts = DiffOptions::default();
-        let our_solution = opts.diff_slice(&input.base, &input.left);
-        let their_solution = opts.diff_slice(&input.base, &input.right);
+        let opts = DiffOptions {
+            algorithm: self.algorithm,
+            ..Default::default()
+        };
+
+        let our_solution = opts.diff_tokens(&input.base, &input.left, input.interner.num_tokens());
+        let their_solution =
+            opts.diff_tokens(&input.base, &input.right, input.interner.num_tokens());
 
         let merged = merge_solutions(&our_solution, &their_solution);
         let mut merge = diff3_range_to_merge_range(&merged);
@@ -193,8 +198,9 @@ impl MergeOptions {
         let their_lines: Vec<_> = theirs.collect();
 
         let opts = DiffOptions::default();
-        let our_solution = opts.diff_slice(&input.base, &input.left);
-        let their_solution = opts.diff_slice(&input.base, &input.right);
+        let our_solution = opts.diff_tokens(&input.base, &input.left, input.interner.num_tokens());
+        let their_solution =
+            opts.diff_tokens(&input.base, &input.right, input.interner.num_tokens());
 
         let merged = merge_solutions(&our_solution, &their_solution);
         let mut merge = diff3_range_to_merge_range(&merged);

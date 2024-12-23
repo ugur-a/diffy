@@ -1,8 +1,8 @@
 use super::*;
 
 macro_rules! assert_merge {
-    ($original:ident, $ours:ident, $theirs:ident, $kind:ident($expected:expr), $msg:literal $(,)?) => {
-        let solution = merge($original, $ours, $theirs);
+    ($merge_options: expr, $original:ident, $ours:ident, $theirs:ident, $kind:ident($expected:expr), $msg:literal $(,)?) => {
+        let solution = $merge_options.merge($original, $ours, $theirs);
 
         macro_rules! result {
             (Ok, $s:expr) => {
@@ -20,7 +20,7 @@ macro_rules! assert_merge {
         );
 
         let solution_bytes =
-            merge_bytes($original.as_bytes(), $ours.as_bytes(), $theirs.as_bytes());
+            $merge_options.merge_bytes($original.as_bytes(), $ours.as_bytes(), $theirs.as_bytes());
 
         macro_rules! result_bytes {
             (Ok, $s:expr) => {
@@ -35,6 +35,16 @@ macro_rules! assert_merge {
             concat!($msg, "\nexpected={:#?}\nactual={:#?}"),
             result_bytes!($kind, $expected),
             solution_bytes
+        );
+    };
+    ($original:ident, $ours:ident, $theirs:ident, $kind:ident($expected:expr), $msg:literal $(,)?) => {
+        assert_merge!(
+            MergeOptions::default(),
+            $original,
+            $ours,
+            $theirs,
+            $kind($expected),
+            $msg
         );
     };
 }

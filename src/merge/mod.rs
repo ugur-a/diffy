@@ -1,4 +1,7 @@
-use imara_diff::sources::{byte_lines_with_terminator, lines_with_terminator};
+use imara_diff::{
+    sources::{byte_lines_with_terminator, lines_with_terminator},
+    Algorithm,
+};
 
 use crate::{
     diff::DiffOptions,
@@ -119,6 +122,7 @@ pub enum ConflictStyle {
 pub struct MergeOptions {
     conflict_marker_length: usize,
     style: ConflictStyle,
+    algorithm: Algorithm,
 }
 
 impl MergeOptions {
@@ -131,6 +135,7 @@ impl MergeOptions {
         Self {
             conflict_marker_length: DEFAULT_CONFLICT_MARKER_LENGTH,
             style: ConflictStyle::Diff3,
+            algorithm: Algorithm::Histogram,
         }
     }
 

@@ -335,7 +335,8 @@ macro_rules! assert_patch {
 fn diff_str() {
     let a = "A\nB\nC\nA\nB\nB\nA\n";
     let b = "C\nB\nA\nB\nA\nC\n";
-    let expected = "\
+
+    let expected_myers = "\
 --- original
 +++ modified
 @@ -1,7 +1,6 @@
@@ -350,7 +351,29 @@ fn diff_str() {
 +C
 ";
 
-    assert_patch!(a, b, expected);
+    let opts = DiffOptions {
+        algorithm: Algorithm::Myers,
+        ..Default::default()
+    };
+    assert_patch!(opts, a, b, expected_myers);
+
+    let expected_histogram = "\
+--- original
++++ modified
+@@ -1,7 +1,6 @@
+-A
+-B
+ C
+-A
+-B
+ B
+ A
++B
++A
++C
+";
+
+    assert_patch!(a, b, expected_histogram);
 }
 
 #[test]

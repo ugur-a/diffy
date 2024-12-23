@@ -1,6 +1,7 @@
 use imara_diff::{
     intern::{InternedInput, Token},
     sources::{byte_lines_with_terminator, lines_with_terminator},
+    Algorithm,
 };
 
 use crate::{
@@ -54,6 +55,7 @@ pub struct DiffOptions {
     pub compact: bool,
     /// Set the number of context lines that should be used when producing a patch
     pub context_len: usize,
+    pub algorithm: Algorithm,
 }
 
 impl DiffOptions {
@@ -65,6 +67,7 @@ impl DiffOptions {
         Self {
             compact: true,
             context_len: 3,
+            algorithm: Algorithm::Histogram,
         }
     }
 

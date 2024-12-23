@@ -526,7 +526,7 @@ fn no_newline_at_eof() {
 }
 
 #[test]
-fn myers_diffy_vs_git() {
+fn diffy_vs_git() {
     let original = "\
 void Chunk_copy(Chunk *src, size_t src_start, Chunk *dst, size_t dst_start, size_t n)
 {
@@ -590,7 +590,7 @@ void Chunk_copy(Chunk *src, size_t src_start, Chunk *dst, size_t dst_start, size
     let git_patch = Patch::from_str(expected_git).unwrap();
     assert_eq!(apply(original, &git_patch).unwrap(), a);
 
-    let expected_diffy = "\
+    let expected_diffy_histogram = "\
 --- original
 +++ modified
 @@ -1,3 +1,10 @@
@@ -604,19 +604,28 @@ void Chunk_copy(Chunk *src, size_t src_start, Chunk *dst, size_t dst_start, size
  void Chunk_copy(Chunk *src, size_t src_start, Chunk *dst, size_t dst_start, size_t n)
  {
      if (!Chunk_bounds_check(src, src_start, n)) return;
-@@ -5,10 +12,3 @@
+@@ -4,11 +11,4 @@
+     if (!Chunk_bounds_check(dst, dst_start, n)) return;
 
      memcpy(dst->data + dst_start, src->data + src_start, n);
- }
+-}
 -
 -int Chunk_bounds_check(Chunk *chunk, size_t start, size_t n)
 -{
 -    if (chunk == NULL) return 0;
 -
 -    return start <= chunk->length && n <= chunk->length - start;
--}
+ }
 ";
-    assert_patch!(original, a, expected_diffy);
+    assert_patch!(original, a, expected_diffy_histogram);
+
+    let expected_diffy_myers = expected_git;
+
+    let opts = DiffOptions {
+        algorithm: Algorithm::Myers,
+        ..Default::default()
+    };
+    assert_patch!(opts, original, a, expected_diffy_myers);
 }
 
 // In the event that a patch has an invalid hunk range we want to ensure that when apply is

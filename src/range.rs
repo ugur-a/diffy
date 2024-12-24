@@ -133,6 +133,12 @@ where
     }
 }
 
+impl<T: ?Sized + SliceLike> Default for Range<'_, T> {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
 pub trait RangeBounds: Sized + Clone + Debug {
     // Returns (offset, len).
     fn try_index(self, len: usize) -> Option<(usize, usize)>;

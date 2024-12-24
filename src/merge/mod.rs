@@ -355,10 +355,8 @@ fn merge_solutions<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike>(
             //
             // Unreachable cases
             //
-            (Some(DiffRange::Equal(..)), None)
-            | (Some(DiffRange::Delete(_)), None)
-            | (None, Some(DiffRange::Equal(..)))
-            | (None, Some(DiffRange::Delete(_)))
+            (Some(DiffRange::Equal(..) | DiffRange::Delete(..)), None)
+            | (None, Some(DiffRange::Equal(..) | DiffRange::Delete(_)))
             | (None, None) => unreachable!("Equal/Delete should match up"),
         };
 

@@ -281,6 +281,8 @@ fn merge_solutions<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike>(
     our_solution: &[DiffRange<'ancestor, 'ours, T>],
     their_solution: &[DiffRange<'ancestor, 'theirs, T>],
 ) -> Vec<Diff3Range<'ancestor, 'ours, 'theirs, T>> {
+    use DiffRange as DR;
+
     let mut our_solution = our_solution.iter().copied();
     let mut their_solution = their_solution.iter().copied();
     let mut ours = our_solution.next();
@@ -293,19 +295,16 @@ fn merge_solutions<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike>(
             //
             // Inserts can't easily be checked to see if they match each other
             //
-            (Some(DiffRange::Insert(range)), _) => {
+            (Some(DR::Insert(range)), _) => {
                 ours.take();
                 Diff3Range::Ours(range)
             }
-            (_, Some(DiffRange::Insert(range))) => {
+            (_, Some(DR::Insert(range))) => {
                 theirs.take();
                 Diff3Range::Theirs(range)
             }
 
-            (
-                Some(DiffRange::Equal(ancestor1, our_range)),
-                Some(DiffRange::Equal(ancestor2, their_range)),
-            ) => {
+            (Some(DR::Equal(ancestor1, our_range)), Some(DR::Equal(ancestor2, their_range))) => {
                 assert_eq!(ancestor1.offset(), ancestor2.offset());
                 let len = cmp::min(ancestor1.len(), ancestor2.len());
 
@@ -319,7 +318,7 @@ fn merge_solutions<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike>(
                 )
             }
 
-            (Some(DiffRange::Equal(ancestor1, our_range)), Some(DiffRange::Delete(ancestor2))) => {
+            (Some(DR::Equal(ancestor1, our_range)), Some(DR::Delete(ancestor2))) => {
                 assert_eq!(ancestor1.offset(), ancestor2.offset());
                 let len = cmp::min(ancestor1.len(), ancestor2.len());
 
@@ -329,10 +328,7 @@ fn merge_solutions<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike>(
                 Diff3Range::AncestorOurs(ancestor1.slice(..len), our_range.slice(..len))
             }
 
-            (
-                Some(DiffRange::Delete(ancestor1)),
-                Some(DiffRange::Equal(ancestor2, their_range)),
-            ) => {
+            (Some(DR::Delete(ancestor1)), Some(DR::Equal(ancestor2, their_range))) => {
                 assert_eq!(ancestor1.offset(), ancestor2.offset());
                 let len = cmp::min(ancestor1.len(), ancestor2.len());
 
@@ -342,7 +338,7 @@ fn merge_solutions<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike>(
                 Diff3Range::AncestorTheirs(ancestor2.slice(..len), their_range.slice(..len))
             }
 
-            (Some(DiffRange::Delete(ancestor1)), Some(DiffRange::Delete(ancestor2))) => {
+            (Some(DR::Delete(ancestor1)), Some(DR::Delete(ancestor2))) => {
                 assert_eq!(ancestor1.offset(), ancestor2.offset());
                 let len = cmp::min(ancestor1.len(), ancestor2.len());
 
@@ -355,8 +351,8 @@ fn merge_solutions<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike>(
             //
             // Unreachable cases
             //
-            (Some(DiffRange::Equal(..) | DiffRange::Delete(..)), None)
-            | (None, Some(DiffRange::Equal(..) | DiffRange::Delete(_)))
+            (Some(DR::Equal(..) | DR::Delete(..)), None)
+            | (None, Some(DR::Equal(..) | DR::Delete(_)))
             | (None, None) => unreachable!("Equal/Delete should match up"),
         };
 

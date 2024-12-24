@@ -148,7 +148,10 @@ salt
         Err(expected),
         "Reverse Single Conflict case"
     );
+}
 
+#[test]
+fn test_merge_multiple_conflicts() {
     let original = "\
 carrots
 garlic
@@ -173,54 +176,115 @@ onions
 tomatoes
 salt
 ";
-    let expected = "\
+    let expected_myers = "\
 carrots
 <<<<<<< ours
 salmon
-tomatoes
 ||||||| original
-=======
-salmon
->>>>>>> theirs
 garlic
 onions
-<<<<<<< ours
-||||||| original
 salmon
-tomatoes
 =======
-tomatoes
+salmon
+garlic
+onions
 >>>>>>> theirs
+tomatoes
+garlic
+onions
 salt
 ";
 
-    assert_merge!(original, a, b, Err(expected), "Multiple Conflict case");
+    let opts_myers = MergeOptions {
+        algorithm: Algorithm::Histogram,
+        ..Default::default()
+    };
+    assert_merge!(
+        opts_myers,
+        original,
+        a,
+        b,
+        Err(expected_myers),
+        "Multiple Conflict case"
+    );
 
-    let expected = "\
+    let expected_histogram = "\
 carrots
 <<<<<<< ours
 salmon
 ||||||| original
-=======
-salmon
-tomatoes
->>>>>>> theirs
 garlic
 onions
-<<<<<<< ours
-tomatoes
-||||||| original
 salmon
-tomatoes
 =======
+salmon
+garlic
+onions
 >>>>>>> theirs
+tomatoes
+garlic
+onions
+salt
+";
+
+    assert_merge!(
+        original,
+        a,
+        b,
+        Err(expected_histogram),
+        "Multiple Conflict case"
+    );
+
+    let expected_myers = "\
+carrots
+<<<<<<< ours
+salmon
+garlic
+onions
+||||||| original
+garlic
+onions
+salmon
+=======
+salmon
+>>>>>>> theirs
+tomatoes
+garlic
+onions
+salt
+";
+    assert_merge!(
+        opts_myers,
+        original,
+        b,
+        a,
+        Err(expected_myers),
+        "Reverse Multiple Conflict case"
+    );
+
+    let expected_histogram = "\
+carrots
+<<<<<<< ours
+salmon
+garlic
+onions
+||||||| original
+garlic
+onions
+salmon
+=======
+salmon
+>>>>>>> theirs
+tomatoes
+garlic
+onions
 salt
 ";
     assert_merge!(
         original,
         b,
         a,
-        Err(expected),
+        Err(expected_histogram),
         "Reverse Multiple Conflict case"
     );
 }
@@ -320,7 +384,18 @@ void Chunk_copy(Chunk *src, size_t src_start, Chunk *dst, size_t dst_start, size
 }
 ";
 
-    assert_merge!(original, a, b, Ok(expected_diffy), "Myers diffy merge");
+    let opts_myers = MergeOptions {
+        algorithm: Algorithm::Myers,
+        ..Default::default()
+    };
+    assert_merge!(
+        opts_myers,
+        original,
+        a,
+        b,
+        Err(_expected_git),
+        "Myers diffy merge"
+    );
 }
 
 #[test]
